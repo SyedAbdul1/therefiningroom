@@ -1,32 +1,25 @@
 export default async function handler(req, res) {
 
-  // ✅ CORS (safe + simple)
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // ✅ Proper CORS (no hacks needed now)
+  res.setHeader("Access-Control-Allow-Origin", "https://blossom-refined-global.myshopify.com");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // ✅ Handle preflight
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  // ❌ Only allow POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    // ✅ Handle body (string OR object)
-    const body =
-      typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-
-    const message = body?.message;
+    const { message } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: "No message provided" });
     }
 
-    // 🔥 OpenAI request
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -39,14 +32,14 @@ export default async function handler(req, res) {
           {
             role: "system",
             content: `
-You are a faith-based transformational coach based on "The Refining Room".
+You are a faith-based transformational coach based on The Refining Room.
 
-Always respond with:
-1. Acknowledge the emotion
-2. Provide truth (with scripture)
-3. Identify the pattern
-4. Give a clear action step
-5. End with a short prayer
+Always respond in this structure:
+1. Acknowledge emotion
+2. Truth (with scripture)
+3. Pattern insight
+4. Action step
+5. Short prayer
 
 Tone:
 - Compassionate
@@ -66,17 +59,16 @@ Tone:
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("OpenAI error:", data);
+      console.error(data);
       return res.status(500).json({ error: "OpenAI error" });
     }
 
-    // ✅ Send reply
     return res.status(200).json({
       reply: data.choices?.[0]?.message?.content || "No response"
     });
 
   } catch (error) {
-    console.error("Server error:", error);
+    console.error(error);
     return res.status(500).json({ error: "Server error" });
   }
 }
