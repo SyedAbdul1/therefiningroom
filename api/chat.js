@@ -1,9 +1,5 @@
 export default async function handler(req, res) {
-
-  res.setHeader("Access-Control-Allow-Origin", "https://blossom-refined-global.myshopify.com");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -30,43 +26,43 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `
-You are a faith-based transformational coach.
+            content: `You are a faith-based transformational coach.
 
 Always respond with:
 1. Acknowledge emotion
 2. Truth (with scripture)
 3. Pattern
 4. Action step
-5. Prayer
-            `
+5. Prayer`
           },
           {
             role: "user",
             content: message
           }
-        ]
+        ],
+        temperature: 0.7
       })
     });
 
     const data = await response.json();
 
-    // 🔴 IMPORTANT DEBUG
-    console.log("OPENAI RESPONSE:", data);
-
     if (!response.ok) {
-      return res.status(500).json({
+      console.error("OpenAI error:", data);
+      return res.status(500).json({ 
         error: "OpenAI error",
-        details: data
+        reply: "I'm having trouble responding right now. Please try again in a moment."
       });
     }
 
-    return res.status(200).json({
-      reply: data.choices?.[0]?.message?.content || "No response"
-    });
+    const reply = data.choices?.[0]?.message?.content || "I'm here to listen. Could you share more about what's on your heart?";
+
+    return res.status(200).json({ reply });
 
   } catch (error) {
-    console.error("SERVER ERROR:", error);
-    return res.status(500).json({ error: "Server error" });
+    console.error("Server error:", error);
+    return res.status(500).json({ 
+      error: "Server error",
+      reply: "I'm temporarily unavailable. Please try again in a few moments."
+    });
   }
 }
